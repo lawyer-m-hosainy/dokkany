@@ -12,8 +12,8 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL || 'https://dokkany.shop',
   email: 'info@dokkany.shop',
   // TODO(owner): تأكد من إعداد رقم واتساب التجاري الفعلي في متغير NEXT_PUBLIC_WHATSAPP_PHONE
-  whatsappPhone: process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '201099887766',
-  whatsappDisplay: process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY || '01099887766',
+  whatsappPhone: process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '201141973834',
+  whatsappDisplay: process.env.NEXT_PUBLIC_WHATSAPP_DISPLAY || '01141973834',
   currency: 'ج.م',
   freeShippingThreshold: 500, // حد الشحن المجاني (ج.م)
   defaultShippingFee: 40, // الشحن الافتراضي

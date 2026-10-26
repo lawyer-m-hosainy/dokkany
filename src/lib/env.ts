@@ -11,8 +11,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default('https://dokkany.shop'),
 
   // WhatsApp
-  NEXT_PUBLIC_WHATSAPP_PHONE: z.string().default('201099887766'),
-  NEXT_PUBLIC_WHATSAPP_DISPLAY: z.string().default('01099887766'),
+  NEXT_PUBLIC_WHATSAPP_PHONE: z.string().default('201141973834'),
+  NEXT_PUBLIC_WHATSAPP_DISPLAY: z.string().default('01141973834'),
 
   // WhatsApp Cloud API (Optional)
   WHATSAPP_CLOUD_API_TOKEN: z.string().optional(),
