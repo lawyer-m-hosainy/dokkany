@@ -1,0 +1,247 @@
+// ==============================================================================
+// Prisma Schema for Dokkany Store (dokkany.shop)
+// Database: PostgreSQL (Neon / Supabase)
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ------------------------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------------------------
+
+enum OrderStatus {
+  NEW         // طلب جديد في انتظار التأكيد
+  CONFIRMED   // تم التواصل مع العميل وتأكيد الشحن
+  SHIPPED     // تم التسليم لشركة الشحن
+  DELIVERED   // تم التوصيل واستلام المبلغ نقداً
+  CANCELLED   // تم الإلغاء (عميل غير جاد أو طلب مكرر)
+  RETURNED    // مرتجع من الشحن
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ORDER_MANAGER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ------------------------------------------------------------------------------
+// Models
+// ------------------------------------------------------------------------------
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(ORDER_MANAGER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+model Category {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  nameAr        String    @map("name_ar")
+  nameEn        String?   @map("name_en")
+  descriptionAr String?   @map("description_ar") @db.Text
+  imageUrl      String    @map("image_url")
+  sortOrder     Int       @default(0) @map("sort_order")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  products      Product[]
+
+  @@map("categories")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  nameAr    String    @map("name_ar")
+  nameEn    String?   @map("name_en")
+  logoUrl   String?   @map("logo_url")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  products  Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  nameAr          String           @map("name_ar")
+  nameEn          String?          @map("name_en")
+  descriptionAr   String           @map("description_ar") @db.Text
+  price           Decimal          @db.Decimal(10, 2)
+  compareAtPrice  Decimal?         @map("compare_at_price") @db.Decimal(10, 2) // سعر الشطب للخصم
+  costPrice       Decimal?         @map("cost_price") @db.Decimal(10, 2)       // سعر التكلفة للتقارير
+  stock           Int              @default(0)
+  images          String[]         // مصفوفة روابط الصور (أول صورة هي الغلاف)
+  isFeatured      Boolean          @default(false) @map("is_featured")
+  isActive        Boolean          @default(true) @map("is_active")
+  soldCount       Int              @default(0) @map("sold_count")
+  badgeText       String?          @map("badge_text")                          // مثلاً: "الأكثر مبيعاً"
+  features        String[]         @default([])
+  specs           Json?
+
+  // حقول السيو (SEO Fields)
+  metaTitle       String?          @map("meta_title")
+  metaDescription String?          @map("meta_description")
+  keywords        String[]         @default([])
+
+  // العلاقات
+  categoryId      String           @map("category_id")
+  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brandId         String?          @map("brand_id")
+  brand           Brand?           @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive, isFeatured])
+  @@index([price])
+  @@index([soldCount])
+  @@map("products")
+}
+
+model ProductVariant {
+  id          String      @id @default(cuid())
+  productId   String      @map("product_id")
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku         String?     @unique
+  nameAr      String      @map("name_ar") // مثلاً: "أسود مطفي" أو "مقاس A5"
+  price       Decimal?    @db.Decimal(10, 2) // يترك فارغاً إذا كان مساوياً لسعر المنتج الأصلي
+  stock       Int         @default(0)
+  imageUrl    String?     @map("image_url")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  orderItems  OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model Governorate {
+  id          String   @id @default(cuid())
+  nameAr      String   @unique @map("name_ar") // القاهرة، الجيزة، الإسكندرية...
+  nameEn      String?  @map("name_en")
+  shippingFee Decimal  @map("shipping_fee") @db.Decimal(10, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  orders      Order[]
+
+  @@map("governorates")
+}
+
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique // e.g. DOKKANY10
+  discountType   DiscountType @default(PERCENTAGE) @map("discount_type")
+  discountValue  Decimal      @map("discount_value") @db.Decimal(10, 2) // 10% أو 50 ج.م
+  minOrderAmount Decimal?     @default(0) @map("min_order_amount") @db.Decimal(10, 2)
+  maxUses        Int?         @map("max_uses")
+  currentUses    Int          @default(0) @map("current_uses")
+  expiresAt      DateTime?    @map("expires_at")
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  orders         Order[]
+
+  @@map("coupons")
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  orderNumber     String       @unique @map("order_number") // مثلاً: DK-2410-8492
+
+  // بيانات العميل
+  customerName    String       @map("customer_name")
+  customerPhone   String       @map("customer_phone") // يتم التحقق من صيغة 01xxxxxxxxx
+  customerAltPhone String?     @map("customer_alt_phone")
+  address         String       @db.Text
+  notes           String?      @db.Text
+
+  // المحافظة وتكلفة الشحن
+  governorateId   String       @map("governorate_id")
+  governorate     Governorate  @relation(fields: [governorateId], references: [id], onDelete: Restrict)
+  governorateName String       @map("governorate_name") // Snapshot لاسم المحافظة
+
+  // الحسابات المالية (Snapshots)
+  subtotal        Decimal      @db.Decimal(10, 2)
+  shippingFee     Decimal      @map("shipping_fee") @db.Decimal(10, 2)
+  discountAmount  Decimal      @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  totalAmount     Decimal      @map("total_amount") @db.Decimal(10, 2)
+
+  // طريقة الدفع والحالة
+  paymentMethod   String       @default("COD") @map("payment_method") // الدفع عند الاستلام فقط
+  status          OrderStatus  @default(NEW)
+
+  // الكوبون إن وجد
+  couponId        String?      @map("coupon_id")
+  coupon          Coupon?      @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCode      String?      @map("coupon_code")
+
+  // بيانات حماية ومنع الاحتيال (Anti-fraud & Rate limit)
+  ipAddress       String?      @map("ip_address")
+  userAgent       String?      @map("user_agent")
+  whatsappNotified Boolean     @default(false) @map("whatsapp_notified")
+
+  items           OrderItem[]
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([customerPhone])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String          @id @default(cuid())
+  orderId        String          @map("order_id")
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId      String?         @map("product_id")
+  product        Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId      String?         @map("variant_id")
+  variant        ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  // Snapshots غير قابلة للتعديل حتى لو تغير سعر أو اسم المنتج لاحقاً
+  productNameAr  String          @map("product_name_ar")
+  variantNameAr  String?         @map("variant_name_ar")
+  unitPrice      Decimal         @map("unit_price") @db.Decimal(10, 2)
+  quantity       Int
+  totalPrice     Decimal         @map("total_price") @db.Decimal(10, 2)
+  productImage   String?         @map("product_image")
+
+  @@index([orderId])
+  @@map("order_items")
+}
