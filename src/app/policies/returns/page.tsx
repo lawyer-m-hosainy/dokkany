@@ -57,10 +57,11 @@ export default function ReturnsPolicyPage() {
               </p>
             </section>
 
-            <section className="space-y-2 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-              <h3 className="text-xs font-bold text-amber-900">ملاحظة لمالك المتجر - TODO(owner):</h3>
-              <p className="text-xs text-amber-800">
-                يرجى مراجعة وتأكيد السياسة القانونية وخطوات استرداد الأموال النقدية أو التحويل عبر المحافظ الإلكترونية (فودافون كاش / إنستاباي) وفق الإجراء الفعلي المتبع في متجرك.
+            {/* TODO(owner): يرجى مراجعة وتأكيد السياسة القانونية وخطوات استرداد الأموال عبر فودافون كاش / إنستاباي */}
+            <section className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <h3 className="text-xs font-bold text-slate-800">طريقة استرداد الأموال:</h3>
+              <p className="text-xs text-slate-600">
+                يتم استرداد المبالغ المالية نقداً أو عبر التحويل المباشر (المحافظ الإلكترونية / إنستاباي) فور استلام الشحنة المرتجعة وفحص حالتها من قبل فريق الجودة في غضون 48 ساعة عمل.
               </p>
             </section>
           </div>

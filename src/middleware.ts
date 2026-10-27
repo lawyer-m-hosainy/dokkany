@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'dokkany-super-secret-jwt-key-minimum-32-chars-long!'
-);
+const jwtSecret = process.env.ADMIN_JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('ADMIN_JWT_SECRET environment variable is required');
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
 const COOKIE_NAME = 'dokkany_admin_token';
 

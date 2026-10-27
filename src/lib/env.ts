@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  // Database Connection
-  DATABASE_URL: z.string().url().optional(),
-  DIRECT_URL: z.string().url().optional(),
+  // Database Connection (Required)
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
 
   // Application
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -24,13 +24,12 @@ const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_CHAT_ID: z.string().optional(),
 
-  // Security & Admin Authentication
+  // Security & Admin Authentication (Required — no defaults)
   ADMIN_JWT_SECRET: z
     .string()
-    .min(32, 'ADMIN_JWT_SECRET should be at least 32 characters')
-    .default('dokkany-super-secret-jwt-key-minimum-32-chars-long!'),
-  ADMIN_DEFAULT_EMAIL: z.string().email().default('admin@dokkany.shop'),
-  ADMIN_DEFAULT_PASSWORD: z.string().min(8).default('AdminChangeThis123!'),
+    .min(32, 'ADMIN_JWT_SECRET must be at least 32 characters'),
+  ADMIN_DEFAULT_EMAIL: z.string().email('ADMIN_DEFAULT_EMAIL must be a valid email'),
+  ADMIN_DEFAULT_PASSWORD: z.string().min(8, 'ADMIN_DEFAULT_PASSWORD must be at least 8 characters'),
 
   // Cloudinary (Optional)
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),

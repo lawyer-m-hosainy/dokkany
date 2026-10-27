@@ -52,7 +52,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'أدوات مكتبية ومدرسية',
     nameEn: 'Stationery & School',
     descriptionAr: 'دفاتر جلدية فاخرة، أقلام راقية، منظمات مكتبية ومستلزمات دراسية متينة للطلاب والمحترفين.',
-    imageUrl: '/src/assets/images/cat_stationery_supplies_1792850819937.jpg',
+    imageUrl: '/images/cat_stationery_supplies.jpg',
     sortOrder: 1,
   },
   {
@@ -61,7 +61,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'إكسسوارات كمبيوتر ولابتوب',
     nameEn: 'Computer Accessories',
     descriptionAr: 'كيبوردات ميكانيكية، ماوسات مريحة، منصات لابتوب ألومنيوم، وموزعات USB-C للعمل والإنتاجية.',
-    imageUrl: '/src/assets/images/cat_computer_gear_1792850820595.jpg',
+    imageUrl: '/images/cat_computer_gear.jpg',
     sortOrder: 2,
   },
   {
@@ -70,7 +70,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'إكسسوارات موبايل',
     nameEn: 'Mobile Accessories',
     descriptionAr: 'شواحن سريعة وMagSafe، كابلات شحن مدرعة، بنوك طاقة فائقة، وحافظات هواتف مقاومة للصدمات.',
-    imageUrl: '/src/assets/images/cat_mobile_accessories_1792850820377.jpg',
+    imageUrl: '/images/cat_mobile_accessories.jpg',
     sortOrder: 3,
   },
 ];

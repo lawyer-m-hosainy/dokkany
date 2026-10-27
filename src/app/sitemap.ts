@@ -1,9 +1,21 @@
 import { MetadataRoute } from 'next';
-import { SEED_PRODUCTS, SEED_CATEGORIES } from '../../prisma/seedData';
+import { prisma } from '@/lib/prisma';
 import { siteConfig } from '@/config/site';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteConfig.url;
+
+  // Fetch products and categories from DB
+  const [dbProducts, dbCategories] = await Promise.all([
+    prisma.product.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+    }),
+    prisma.category.findMany({
+      where: { isActive: true },
+      select: { slug: true },
+    }),
+  ]);
 
   // Static core routes
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -46,7 +58,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Category routes
-  const categoryRoutes: MetadataRoute.Sitemap = SEED_CATEGORIES.map((cat) => ({
+  const categoryRoutes: MetadataRoute.Sitemap = dbCategories.map((cat) => ({
     url: `${baseUrl}/catalog?category=${cat.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
@@ -54,9 +66,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // Dynamic Product routes
-  const productRoutes: MetadataRoute.Sitemap = SEED_PRODUCTS.map((prod) => ({
+  const productRoutes: MetadataRoute.Sitemap = dbProducts.map((prod) => ({
     url: `${baseUrl}/product/${prod.slug}`,
-    lastModified: new Date(),
+    lastModified: prod.updatedAt,
     changeFrequency: 'weekly',
     priority: 0.85,
   }));

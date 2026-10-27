@@ -3,21 +3,28 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { siteConfig, EGYPTIAN_GOVERNORATES } from '@/config/site';
 import { isValidEgyptianPhone } from '@/lib/formatters';
-import { SEED_PRODUCTS } from '../../../../prisma/seedData';
 
 // Simple in-memory rate-limiter & duplicate protection (5 minutes per phone)
 const recentOrdersCache = new Map<string, number>();
+const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
 
-// Cleanup cache periodically
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [phone, timestamp] of recentOrdersCache.entries()) {
-      if (now - timestamp > 5 * 60 * 1000) {
-        recentOrdersCache.delete(phone);
-      }
+function isRateLimited(phone: string): boolean {
+  const now = Date.now();
+  const lastOrder = recentOrdersCache.get(phone);
+  if (lastOrder && now - lastOrder < RATE_LIMIT_WINDOW) {
+    return true;
+  }
+  // Clean old entries opportunistically
+  for (const [key, timestamp] of recentOrdersCache.entries()) {
+    if (now - timestamp > RATE_LIMIT_WINDOW) {
+      recentOrdersCache.delete(key);
     }
-  }, 60 * 1000);
+  }
+  return false;
+}
+
+function markOrdered(phone: string): void {
+  recentOrdersCache.set(phone, Date.now());
 }
 
 // Zod Schema for Order Submission
@@ -119,9 +126,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Prevent duplicate order spam (same phone number within 5 minutes)
     const cleanPhone = data.customerPhone.replace(/\D/g, '');
-    const lastOrderTime = recentOrdersCache.get(cleanPhone);
-    const now = Date.now();
-    if (lastOrderTime && now - lastOrderTime < 5 * 60 * 1000) {
+    if (isRateLimited(cleanPhone)) {
       return NextResponse.json(
         {
           success: false,
@@ -303,25 +308,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, message: msg }, { status: 400 });
       }
 
-      // Fallback for offline dev or pre-seeded demo
-      console.warn('Database transaction skipped or not connected, generating fallback order number:', dbError);
-      createdOrderNumber = generateOrderNumber();
-
-      // Calculate authoritative total from SEED data
-      let seedSubtotal = 0;
-      for (const item of data.items) {
-        const prod = SEED_PRODUCTS.find((p) => p.id === item.productId || p.slug === item.productSlug);
-        if (prod) {
-          seedSubtotal += Number(prod.price) * item.quantity;
-        }
-      }
-      const effectiveShip = seedSubtotal >= siteConfig.freeShippingThreshold ? 0 : shippingFee;
-      finalTotal = seedSubtotal + effectiveShip;
-      itemsCount = data.items.length;
+      console.error('Database transaction error in POST /api/orders:', dbError);
+      return NextResponse.json(
+        { success: false, message: 'حدث خطأ أثناء حفظ الطلب في قاعدة البيانات. يرجى المحاولة مرة أخرى أو الطلب عبر واتساب.' },
+        { status: 500 }
+      );
     }
 
     // Record cache to prevent immediate spam
-    recentOrdersCache.set(cleanPhone, Date.now());
+    markOrdered(cleanPhone);
 
     // 6. Notify Store Owner Asynchronously outside transaction
     notifyOwnerViaTelegram(createdOrderNumber, data.customerName, data.customerPhone, govName, finalTotal, itemsCount);

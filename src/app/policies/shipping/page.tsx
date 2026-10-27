@@ -67,10 +67,11 @@ export default function ShippingPolicyPage() {
               </div>
             </section>
 
-            <section className="space-y-2 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-              <h3 className="text-xs font-bold text-amber-900">ملاحظة لمالك المتجر - TODO(owner):</h3>
-              <p className="text-xs text-amber-800">
-                قم بمراجعة أسعار الشحن وتحديثها حسب تعاقد شركة الشحن المعتمدة لديك (مثل بوسطة / أوتو / ارامكس).
+            {/* TODO(owner): راجع أسعار الشحن وتحديثها حسب تعاقد شركة الشحن المعتمدة لديك (بوسطة / أوتو / ارامكس) */}
+            <section className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <h3 className="text-xs font-bold text-slate-800">ملاحظة بشأن التوصيل:</h3>
+              <p className="text-xs text-slate-600">
+                يقوم المندوب بالتواصل هاتفياً أو عبر واتساب قبل الوصول لتأكيد التواجد، ونوفر إمكانية المعاينة قبل الاستلام.
               </p>
             </section>
           </div>

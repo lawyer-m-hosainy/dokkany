@@ -45,10 +45,11 @@ export default function TermsPolicyPage() {
               </p>
             </section>
 
-            <section className="space-y-2 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-              <h3 className="text-xs font-bold text-amber-900">ملاحظة لمالك المتجر - TODO(owner):</h3>
-              <p className="text-xs text-amber-800">
-                راجع الصيغة القانونية للشروط والأحكام لتناسب الهيكل التجاري والقانوني الخاص بمؤسستك.
+            {/* TODO(owner): راجع الصيغة القانونية للشروط والأحكام لتناسب الهيكل التجاري الخاص بمؤسستك */}
+            <section className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <h3 className="text-xs font-bold text-slate-800">تحديث الشروط والأحكام:</h3>
+              <p className="text-xs text-slate-600">
+                يحتفظ متجر دكاني بحق تعديل أو تحديث هذه الشروط بما يتماشى مع اللوائح والأنظمة التجارية المعمول بها في جمهورية مصر العربية، وتسري أي تعديلات من تاريخ نشرها على الموقع.
               </p>
             </section>
           </div>

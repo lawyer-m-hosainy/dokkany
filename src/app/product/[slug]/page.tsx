@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 import { ProductDetailView } from '@/components/product/ProductDetailView';
-import { SEED_PRODUCTS, SEED_CATEGORIES } from '../../../../prisma/seedData';
 import { Product } from '@/types/store';
 import { siteConfig } from '@/config/site';
+
+export const revalidate = 60;
 
 interface ProductPageProps {
   params: {
@@ -11,54 +13,69 @@ interface ProductPageProps {
   };
 }
 
-// Convert SEED product to Store Product type
-function mapSeedToProduct(p: (typeof SEED_PRODUCTS)[0]): Product {
-  const cat = SEED_CATEGORIES.find((c) => c.id === p.categoryId);
+function mapDbToProduct(p: {
+  id: string;
+  slug: string;
+  nameAr: string;
+  nameEn: string | null;
+  descriptionAr: string;
+  price: unknown;
+  compareAtPrice: unknown;
+  stock: number;
+  badgeText: string | null;
+  images: string[];
+  features: unknown;
+  keywords: unknown;
+  specs: unknown;
+  category: { slug: string; nameAr: string } | null;
+  brand: { nameEn: string | null } | null;
+}): Product {
   const categoryKey: 'stationery' | 'computer' | 'mobile' =
-    cat?.slug === 'stationery' ? 'stationery' : cat?.slug === 'computer' ? 'computer' : 'mobile';
+    p.category?.slug === 'stationery' ? 'stationery' : p.category?.slug === 'computer' ? 'computer' : 'mobile';
 
   return {
     id: p.id,
     name: p.nameEn || p.nameAr,
     nameAr: p.nameAr,
     categoryId: categoryKey,
-    categoryNameAr: cat?.nameAr || '',
+    categoryNameAr: p.category?.nameAr || '',
     price: Number(p.price),
     originalPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
     rating: 5,
     reviewsCount: 25,
     inStock: p.stock > 0,
     stockCount: p.stock,
-    brand: p.brandId ? p.brandId.replace('brand-', '').toUpperCase() : 'دكاني',
+    brand: p.brand?.nameEn || 'دكاني',
     description: p.descriptionAr,
-    features: p.features || [],
+    features: (p.features as string[]) || [],
     image: p.images[0] || '/images/hero_dokkany_workspace.jpg',
-    tags: ('keywords' in p && Array.isArray((p as { keywords?: string[] }).keywords) ? (p as { keywords: string[] }).keywords : []),
-    badge: p.badgeText,
-    specs: (p.specs as unknown as Record<string, string>) || {},
+    tags: (p.keywords as string[]) || [],
+    badge: p.badgeText || undefined,
+    specs: (p.specs as Record<string, string>) || {},
     images: p.images,
     slug: p.slug,
   };
 }
 
 export async function generateStaticParams() {
-  return SEED_PRODUCTS.map((product) => ({
-    slug: product.slug,
-  }));
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: { slug: true },
+  });
+  return products.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const rawProduct = SEED_PRODUCTS.find(
-    (p) => p.slug === params.slug || p.id === params.slug
-  );
+  const dbProduct = await prisma.product.findFirst({
+    where: { slug: params.slug, isActive: true },
+    include: { category: true, brand: true },
+  });
 
-  if (!rawProduct) {
-    return {
-      title: 'المنتج غير موجود',
-    };
+  if (!dbProduct) {
+    return { title: 'المنتج غير موجود' };
   }
 
-  const product = mapSeedToProduct(rawProduct);
+  const product = mapDbToProduct(dbProduct);
 
   return {
     title: product.nameAr,
@@ -78,17 +95,30 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default function ProductDetailPage({ params }: ProductPageProps) {
-  const rawProduct = SEED_PRODUCTS.find(
-    (p) => p.slug === params.slug || p.id === params.slug
-  );
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const dbProduct = await prisma.product.findFirst({
+    where: { slug: params.slug, isActive: true },
+    include: { category: true, brand: true, variants: true },
+  });
 
-  if (!rawProduct) {
+  if (!dbProduct) {
     notFound();
   }
 
-  const product = mapSeedToProduct(rawProduct);
-  const allProducts = SEED_PRODUCTS.map(mapSeedToProduct);
+  const product = mapDbToProduct(dbProduct);
+
+  // Get related products from same category
+  const relatedDbProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      categoryId: dbProduct.categoryId,
+      id: { not: dbProduct.id },
+    },
+    include: { category: true, brand: true, variants: true },
+    take: 8,
+  });
+
+  const allProducts = [product, ...relatedDbProducts.map(mapDbToProduct)];
 
   // JSON-LD Schema
   const jsonLd = {
@@ -108,7 +138,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
       availability: product.inStock
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
-      url: `${siteConfig.url}/product/${product.slug || product.id}`,
+      url: `${siteConfig.url}/product/${product.slug}`,
     },
   };
 

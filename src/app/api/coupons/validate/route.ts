@@ -67,28 +67,18 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
+          valid: true,
           code: coupon.code,
           discountAmount: Math.min(discountAmount, subtotal),
           message: 'تم تفعيل كود الخصم بنجاح!',
         });
       }
-    } catch {
-      // Fallback below
-    }
-
-    // Default static fallback for DOKKANY10
-    if (cleanCode === 'DOKKANY10') {
-      const discount = Math.round(subtotal * 0.1);
-      return NextResponse.json({
-        success: true,
-        code: 'DOKKANY10',
-        discountAmount: discount,
-        message: 'تم تفعيل كود الخصم (10% خصم)!',
-      });
+    } catch (dbError) {
+      console.error('Database error in coupon validation:', dbError);
     }
 
     return NextResponse.json(
-      { success: false, message: 'كود الخصم غير صحيح أو منتهي الصلاحية' },
+      { success: false, valid: false, message: 'كود الخصم غير صحيح أو منتهي الصلاحية' },
       { status: 404 }
     );
   } catch (error) {

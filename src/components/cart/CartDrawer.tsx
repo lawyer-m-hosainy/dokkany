@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ShieldCheck, Tag } from 'lucide-react';
@@ -48,7 +48,9 @@ export const CartDrawer: React.FC = () => {
     };
   }, [isOpen, closeCart]);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     setCouponError('');
     setCouponSuccess('');
@@ -56,13 +58,26 @@ export const CartDrawer: React.FC = () => {
 
     if (!code) return;
 
-    if (code === 'DOKKANY10') {
-      const discount = Math.round(subtotal * 0.1);
-      applyCoupon(code, discount);
-      setCouponSuccess('تم تفعيل كود الخصم (10% خصم)!');
-      setInputCoupon('');
-    } else {
-      setCouponError('كود الخصم غير صحيح أو منتهي الصلاحية');
+    setIsValidating(true);
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = await res.json();
+
+      if (data.valid || data.success) {
+        applyCoupon(data.code || code, data.discountAmount || 0);
+        setCouponSuccess(data.message || 'تم تفعيل كود الخصم بنجاح!');
+        setInputCoupon('');
+      } else {
+        setCouponError(data.message || 'كود الخصم غير صحيح أو منتهي الصلاحية');
+      }
+    } catch {
+      setCouponError('حدث خطأ أثناء التحقق من الكود، حاول مرة أخرى');
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -192,7 +207,7 @@ export const CartDrawer: React.FC = () => {
                     type="text"
                     value={inputCoupon}
                     onChange={(e) => setInputCoupon(e.target.value)}
-                    placeholder="كود الخصم (مثال: DOKKANY10)"
+                    placeholder="أدخل كود الخصم"
                     className="w-full text-xs pe-8 ps-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-500 bg-white"
                   />
                   <Tag className="w-3.5 h-3.5 text-slate-400 absolute start-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />

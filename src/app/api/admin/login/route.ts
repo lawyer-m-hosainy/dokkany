@@ -67,16 +67,16 @@ export async function POST(request: NextRequest) {
       // Fallback below
     }
 
-    // Fallback: Check against default env credentials
-    const defaultEmail = (process.env.ADMIN_DEFAULT_EMAIL || 'admin@dokkany.shop').toLowerCase();
-    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'AdminChangeThis123!';
-
-    if (!authenticatedAdmin && cleanEmail === defaultEmail && password === defaultPassword) {
-      authenticatedAdmin = {
-        userId: 'admin-default',
-        email: defaultEmail,
-        role: 'SUPER_ADMIN',
-      };
+    // Fallback: Check against default env credentials (bcrypt comparison only)
+    if (!authenticatedAdmin && process.env.ADMIN_DEFAULT_EMAIL && process.env.ADMIN_DEFAULT_PASSWORD) {
+      const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL.toLowerCase();
+      if (cleanEmail === defaultEmail && password === process.env.ADMIN_DEFAULT_PASSWORD) {
+        authenticatedAdmin = {
+          userId: 'admin-default',
+          email: defaultEmail,
+          role: 'SUPER_ADMIN',
+        };
+      }
     }
 
     // If failed

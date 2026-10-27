@@ -37,12 +37,23 @@ const PRICE_PRESETS = [
   { label: 'أكثر من 200 ج.م', min: 200, max: 1000 },
 ];
 
-const CATEGORY_TABS = [
+type CategoryType = 'all' | 'stationery' | 'computer' | 'mobile';
+
+interface CategoryTab {
+  id: CategoryType;
+  label: string;
+}
+
+const CATEGORY_TABS: CategoryTab[] = [
   { id: 'all', label: 'جميع المنتجات' },
   { id: 'stationery', label: 'أدوات مكتبية ومدرسية' },
   { id: 'computer', label: 'إكسسوارات كمبيوتر ولابتوب' },
   { id: 'mobile', label: 'إكسسوارات موبايل' },
 ];
+
+function isCategoryType(val: unknown): val is CategoryType {
+  return typeof val === 'string' && ['all', 'stationery', 'computer', 'mobile'].includes(val);
+}
 
 export const CatalogSection: React.FC<CatalogSectionProps> = ({
   products,
@@ -59,8 +70,8 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
   const [visibleCount, setVisibleCount] = useState(8);
 
   // Filters state
-  const [category, setCategory] = useState<'all' | 'stationery' | 'computer' | 'mobile'>(
-    (initialCategory as any) || 'all'
+  const [category, setCategory] = useState<CategoryType>(
+    isCategoryType(initialCategory) ? initialCategory : 'all'
   );
   const [searchInput, setSearchInput] = useState(initialSearchQuery);
   const debouncedSearch = useDebounce(searchInput, 250);
@@ -74,7 +85,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
   // Sync with prop changes if external nav triggers category change
   useEffect(() => {
     if (initialCategory) {
-      setCategory((initialCategory as any) || 'all');
+      setCategory(isCategoryType(initialCategory) ? initialCategory : 'all');
     }
   }, [initialCategory]);
 
@@ -226,7 +237,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               <button
                 key={tab.id}
                 onClick={() => {
-                  setCategory(tab.id as any);
+                  setCategory(tab.id);
                   setVisibleCount(8);
                 }}
                 className={`px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 ${
@@ -287,7 +298,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
               <div className="relative">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value as FilterState['sortBy'])}
                   className="appearance-none bg-slate-50 border border-slate-200 rounded-xl py-2 ps-8 pe-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="featured">المميز والأحدث 🔥</option>
@@ -525,7 +536,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = ({
                     {CATEGORY_TABS.map((tab) => (
                       <button
                         key={tab.id}
-                        onClick={() => setCategory(tab.id as any)}
+                        onClick={() => setCategory(tab.id)}
                         className={`w-full text-start px-3 py-2 rounded-xl text-xs font-bold ${
                           category === tab.id
                             ? 'bg-emerald-100 text-emerald-900 font-black'

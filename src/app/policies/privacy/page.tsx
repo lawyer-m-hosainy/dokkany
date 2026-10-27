@@ -48,10 +48,11 @@ export default function PrivacyPolicyPage() {
               </p>
             </section>
 
-            <section className="space-y-2 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-              <h3 className="text-xs font-bold text-amber-900">ملاحظة لمالك المتجر - TODO(owner):</h3>
-              <p className="text-xs text-amber-800">
-                أدخل التفاصيل الرسمية للسجل التجاري أو البطاقة الضريبية ومسؤول حماية البيانات إن وجدت.
+            {/* TODO(owner): أدخل التفاصيل الرسمية للسجل التجاري أو البطاقة الضريبية إن وجدت */}
+            <section className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <h3 className="text-xs font-bold text-slate-800">التواصل والاستفسارات:</h3>
+              <p className="text-xs text-slate-600">
+                لأي استفسارات حول بياناتك أو لممارسة حقوقك في تعديل أو حذف بيانات التواصل، يمكنك مراسلتنا عبر واتساب خدمة العملاء الموضح في أسفل الموقع.
               </p>
             </section>
           </div>

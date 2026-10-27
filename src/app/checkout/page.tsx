@@ -29,6 +29,7 @@ export default function CheckoutPage() {
   } = useCartStore();
 
   const [mounted, setMounted] = useState(false);
+  const [governorates, setGovernorates] = useState(EGYPTIAN_GOVERNORATES);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [altPhone, setAltPhone] = useState('');
@@ -42,6 +43,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
+    fetch('/api/governorates')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.governorates) && data.governorates.length > 0) {
+          setGovernorates(data.governorates);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   if (!mounted) {
@@ -53,7 +62,7 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getSubtotal();
-  const gov = EGYPTIAN_GOVERNORATES.find((g) => g.id === selectedGovernorate) || EGYPTIAN_GOVERNORATES[0];
+  const gov = governorates.find((g) => g.id === selectedGovernorate) || governorates[0];
   const isFreeShipping = subtotal >= siteConfig.freeShippingThreshold;
   const shippingFee = isFreeShipping ? 0 : gov.shippingFee;
   const total = Math.max(0, subtotal - discountAmount) + shippingFee;
@@ -258,12 +267,10 @@ export default function CheckoutPage() {
                   onChange={(e) => setSelectedGovernorate(e.target.value)}
                   className="w-full text-xs sm:text-sm px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                 >
-                  {EGYPTIAN_GOVERNORATES.map((g) => (
-                    <tr key={g.id}>
-                      <option value={g.id}>
-                        {g.nameAr} - مصاريف الشحن: {isFreeShipping ? 'مجاناً 🎁' : `${g.shippingFee} ج.م`}
-                      </option>
-                    </tr>
+                  {governorates.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nameAr} - مصاريف الشحن: {isFreeShipping ? 'مجاناً 🎁' : `${g.shippingFee} ج.م`}
+                    </option>
                   ))}
                 </select>
               </div>

@@ -12,7 +12,6 @@ import {
   XCircle,
   LogOut,
   Search,
-  Filter,
   Printer,
   Download,
   Eye,

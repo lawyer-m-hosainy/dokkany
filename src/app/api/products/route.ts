@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { normalizeArabicText } from '@/lib/arabicNormalize';
-import { SEED_PRODUCTS, SEED_CATEGORIES } from '../../../../prisma/seedData';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,63 +16,32 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit')) || 20));
 
-    // Try DB first, fallback to seed data if DB is not configured in development
-    let rawProducts;
-    try {
-      rawProducts = await prisma.product.findMany({
-        where: { isActive: true },
-        include: { category: true, brand: true },
-      });
-    } catch {
-      rawProducts = null;
-    }
+    const rawProducts = await prisma.product.findMany({
+      where: { isActive: true },
+      include: { category: true, brand: true },
+    });
 
-    let products = rawProducts
-      ? rawProducts.map((p) => ({
-          id: p.id,
-          slug: p.slug,
-          name: p.nameEn || p.nameAr,
-          nameAr: p.nameAr,
-          categoryId: p.category.slug,
-          categoryNameAr: p.category.nameAr,
-          price: Number(p.price),
-          originalPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
-          inStock: p.stock > 0,
-          stockCount: p.stock,
-          brand: p.brand?.nameAr || 'دكاني',
-          description: p.descriptionAr,
-          features: p.features || [],
-          image: p.images[0] || '/images/hero_dokkany_workspace.jpg',
-          tags: p.keywords || [],
-          badge: p.badgeText,
-          specs: (p.specs as Record<string, string>) || {},
-          images: p.images,
-          soldCount: p.soldCount,
-        }))
-      : SEED_PRODUCTS.map((p) => {
-          const cat = SEED_CATEGORIES.find((c) => c.id === p.categoryId);
-          return {
-            id: p.id,
-            slug: p.slug,
-            name: p.nameEn || p.nameAr,
-            nameAr: p.nameAr,
-            categoryId: cat?.slug || 'all',
-            categoryNameAr: cat?.nameAr || '',
-            price: Number(p.price),
-            originalPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
-            inStock: p.stock > 0,
-            stockCount: p.stock,
-            brand: p.brandId ? p.brandId.replace('brand-', '').toUpperCase() : 'دكاني',
-            description: p.descriptionAr,
-            features: p.features || [],
-            image: p.images[0] || '/images/hero_dokkany_workspace.jpg',
-            tags: ('keywords' in p && Array.isArray((p as { keywords?: string[] }).keywords) ? (p as { keywords: string[] }).keywords : []),
-            badge: p.badgeText,
-            specs: (p.specs as unknown as Record<string, string>) || {},
-            images: p.images,
-            soldCount: p.soldCount,
-          };
-        });
+    let products = rawProducts.map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.nameEn || p.nameAr,
+      nameAr: p.nameAr,
+      categoryId: p.category.slug,
+      categoryNameAr: p.category.nameAr,
+      price: Number(p.price),
+      originalPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
+      inStock: p.stock > 0,
+      stockCount: p.stock,
+      brand: p.brand?.nameAr || 'دكاني',
+      description: p.descriptionAr,
+      features: p.features || [],
+      image: p.images[0] || '/images/hero_dokkany_workspace.jpg',
+      tags: p.keywords || [],
+      badge: p.badgeText,
+      specs: (p.specs as Record<string, string>) || {},
+      images: p.images,
+      soldCount: p.soldCount,
+    }));
 
     // 1. Filter by category
     if (category && category !== 'all') {

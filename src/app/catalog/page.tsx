@@ -1,41 +1,48 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { prisma } from '@/lib/prisma';
 import { CatalogClient } from './CatalogClient';
-import { SEED_PRODUCTS, SEED_CATEGORIES } from '../../../prisma/seedData';
 import { Product } from '@/types/store';
 import { ProductCardSkeleton } from '@/components/common/Skeleton';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'كتالوج المنتجات والعروض',
   description: 'تصفح كافة الأدوات المكتبية والمدرسية وإكسسوارات الكمبيوتر والموبايل بأفضل الأسعار في مصر.',
 };
 
-export default function CatalogPage() {
-  // Map SEED_PRODUCTS to Product type
-  const products: Product[] = SEED_PRODUCTS.map((p) => {
-    const cat = SEED_CATEGORIES.find((c) => c.id === p.categoryId);
+export default async function CatalogPage() {
+  const dbProducts = await prisma.product.findMany({
+    where: { isActive: true },
+    include: { category: true, brand: true, variants: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Map DB products to Product type (serializable plain objects)
+  const products: Product[] = dbProducts.map((p) => {
     const categoryKey: 'stationery' | 'computer' | 'mobile' =
-      cat?.slug === 'stationery' ? 'stationery' : cat?.slug === 'computer' ? 'computer' : 'mobile';
+      p.category?.slug === 'stationery' ? 'stationery' : p.category?.slug === 'computer' ? 'computer' : 'mobile';
 
     return {
       id: p.id,
       name: p.nameEn || p.nameAr,
       nameAr: p.nameAr,
       categoryId: categoryKey,
-      categoryNameAr: cat?.nameAr || '',
+      categoryNameAr: p.category?.nameAr || '',
       price: Number(p.price),
       originalPrice: p.compareAtPrice ? Number(p.compareAtPrice) : undefined,
       rating: 5,
       reviewsCount: 30,
       inStock: p.stock > 0,
       stockCount: p.stock,
-      brand: p.brandId ? p.brandId.replace('brand-', '').toUpperCase() : 'دكاني',
+      brand: p.brand?.nameEn || 'دكاني',
       description: p.descriptionAr,
-      features: p.features || [],
+      features: p.features as string[] || [],
       image: p.images[0] || '/images/hero_dokkany_workspace.jpg',
-      tags: ('keywords' in p && Array.isArray((p as { keywords?: string[] }).keywords) ? (p as { keywords: string[] }).keywords : []),
-      badge: p.badgeText,
-      specs: (p.specs as unknown as Record<string, string>) || {},
+      tags: p.keywords as string[] || [],
+      badge: p.badgeText || undefined,
+      specs: (p.specs as Record<string, string>) || {},
       images: p.images,
       slug: p.slug,
     };
