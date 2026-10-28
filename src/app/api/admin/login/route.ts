@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = result.data;
     const cleanEmail = email.toLowerCase().trim();
+    const cleanPassword = password.trim();
 
     let authenticatedAdmin = null;
 
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (dbUser && dbUser.isActive) {
-        const matches = await bcrypt.compare(password, dbUser.passwordHash);
+        let matches = await bcrypt.compare(password, dbUser.passwordHash);
+        if (!matches && cleanPassword !== password) {
+          matches = await bcrypt.compare(cleanPassword, dbUser.passwordHash);
+        }
         if (matches) {
           authenticatedAdmin = {
             userId: dbUser.id,
@@ -69,8 +73,9 @@ export async function POST(request: NextRequest) {
 
     // Fallback: Check against default env credentials (bcrypt comparison only)
     if (!authenticatedAdmin && process.env.ADMIN_DEFAULT_EMAIL && process.env.ADMIN_DEFAULT_PASSWORD) {
-      const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL.toLowerCase();
-      if (cleanEmail === defaultEmail && password === process.env.ADMIN_DEFAULT_PASSWORD) {
+      const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL.toLowerCase().trim();
+      const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+      if (cleanEmail === defaultEmail && (password === defaultPassword || cleanPassword === defaultPassword)) {
         authenticatedAdmin = {
           userId: 'admin-default',
           email: defaultEmail,
